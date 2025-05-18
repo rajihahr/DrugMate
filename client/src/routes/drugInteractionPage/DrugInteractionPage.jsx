@@ -414,7 +414,7 @@ const DrugInteractionPage = () => {
             onClick={handleCheck}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Checking..." : "Check for Interactions"}
+            {isSubmitting ? "Checking..." : "Check Interactions"}
           </button>
           <button 
             className="back-button"
