@@ -162,39 +162,61 @@
   }
   
   .action-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    align-items: center;
-    margin-top: 70px;
-    padding-bottom: 60px;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  margin-top: 70px;
+  padding-bottom: 60px;
+}
+
+.check-button {
+  background-color: #2a6c6c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 12px 30px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 200px;
+  text-align: center;
+}
+
+.check-button:hover {
+  background-color: #264242;
+}
+
+.check-button:disabled {
+  background-color: #a0c4c4;
+  cursor: not-allowed;
+}
+
+.clear-button {
+  background-color: #f0f0f0;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 12px 30px;
+  font-size: 16px;
+  cursor: pointer;
+  min-width: 200px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.clear-button:hover {
+  background-color: #e5e5e5;
+  color: #333;
+}
+
+.clear-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
   
-  .check-button {
-    background-color: #2a6c6c;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 12px 30px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    min-width: 200px; /* Slightly wider button */
-    text-align: center;
-  }
-  
-  .check-button:hover {
-    background-color: #264242;
-  }
-  
-  .check-button:disabled {
-    background-color: #a0c4c4;
-    cursor: not-allowed;
-  }
-  
-/* Try with !important to override any conflicting styles */
 .back-button {
-  background-color: white !important; /* Force override with !important */
+  background-color: white !important;
   color: #2a6c6c !important;
   border: 1px solid #2a6c6c !important;
   border-radius: 5px;
@@ -205,7 +227,6 @@
   text-align: center;
 }
 
-/* Make sure the hover state also has the right background */
 .back-button:hover {
   background-color: #f5f5f5 !important;
 }
@@ -213,6 +234,6 @@
 .back-button:disabled {
   color: #a0c4c4 !important;
   border-color: #a0c4c4 !important;
-  background-color: #f9f9f9 !important; /* Light background when disabled */
+  background-color: #f9f9f9 !important;
   cursor: not-allowed;
 }

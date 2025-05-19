@@ -218,6 +218,9 @@ const DrugInteractionPage = () => {
       // Prevent duplicate initial response
       sessionStorage.setItem(`chat_${id}_initial_sent`, "true");
       
+      // Store flag to show drug interaction suggestions in the chat
+      sessionStorage.setItem(`chat_${id}_drug_interaction`, "true");
+      
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["userChats"] });
       
@@ -239,6 +242,27 @@ const DrugInteractionPage = () => {
     
     // Create the chat for drug interaction
     createChatMutation.mutate();
+  };
+  
+  // Function to clear all drug images and data
+  const handleClearAll = () => {
+    setDrug1({
+      isLoading: false,
+      error: "",
+      dbData: {},
+      aiData: {},
+      extractedText: "",
+      identifiedDrug: null
+    });
+    
+    setDrug2({
+      isLoading: false,
+      error: "",
+      dbData: {},
+      aiData: {},
+      extractedText: "",
+      identifiedDrug: null
+    });
   };
   
   return (
@@ -412,10 +436,20 @@ const DrugInteractionPage = () => {
           <button 
             className="check-button" 
             onClick={handleCheck}
-            disabled={isSubmitting}
+            disabled={isSubmitting || (!drug1.dbData?.filePath && !drug2.dbData?.filePath)}
           >
             {isSubmitting ? "Checking..." : "Check Interactions"}
           </button>
+          
+          {/* Add Clear All button */}
+          <button 
+            className="clear-button"
+            onClick={handleClearAll}
+            disabled={isSubmitting || (!drug1.dbData?.filePath && !drug2.dbData?.filePath)}
+          >
+            Clear All
+          </button>
+          
           <button 
             className="back-button"
             onClick={() => navigate('/dashboard')}

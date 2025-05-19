@@ -1,0 +1,63 @@
+/* drugInteractionSuggestion.css */
+
+.drug-interaction-suggestion {
+  margin: 15px 0 25px;
+  padding: 15px;
+  background-color: #f0f7f7;
+  border-radius: 10px;
+  border-left: 4px solid #3A8D8D;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.suggestion-header svg {
+  color: #3A8D8D;
+}
+
+.suggestion-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.suggestion-content p {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.check-more-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background-color: #3A8D8D;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.check-more-button:hover {
+  background-color: #2a6c6c;
+}
+
+.check-more-button svg {
+  width: 18px;
+  height: 18px;
+}

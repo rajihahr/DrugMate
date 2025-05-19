@@ -63,16 +63,14 @@
   object-fit: cover;
 }
 
-
-
 /* Updated form container to match chat page styling */
 .dashboardPage .formContainer {
   margin-top: auto;
-  width: 70%; /* Increased from 50% to 70% to match chat page */
+  width: 70%;
   background-color: #EEEEEE;
   border-radius: 20px;
   display: flex;
-  margin-bottom: 10px; /* Added to match chat page */
+  margin-bottom: 20px; /* Added to match chat page */
 }
 
 .dashboardPage .formContainer form {
