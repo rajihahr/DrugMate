@@ -61,11 +61,11 @@ const DashboardPage = () => {
         break;
       case 'drugInteraction':
         // Navigate to drug interaction checker page
-        navigate('/drug-interaction');
+        navigate('/dashboard/drug-interaction');
         break;
       case 'emergency':
         // Navigate to emergency assistance page
-        navigate('/emergency');
+        navigate('/dashboard/emergency');
         break;
       default:
         break;

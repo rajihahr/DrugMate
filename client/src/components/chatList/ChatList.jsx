@@ -92,7 +92,7 @@ const ChatList = () => {
     setOpenMenuId(null);
   };
   
-  // Enhanced PDF generation function
+  // PDF generation function (unchanged)
   const generateSummaryPDF = (summaryData) => {
     // Create a temporary div element to render the content
     const tempDiv = document.createElement('div');
@@ -261,28 +261,31 @@ const ChatList = () => {
   if (isCollapsed) {
     return (
       <div className='chatList'>
-        <div className="dashboard-header">
-        <div className="toggle-arrow">
-          <button 
-            className="arrow-button" 
-            onClick={toggleCollapse} 
-            aria-label="Expand sidebar"
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              width="18" 
-              height="18" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeLinejoin="round"
+        <div className="sidebar-header">
+          <Link to="/" className='logo-small'>
+            <img src="/logo.png" alt="DrugMate" />
+          </Link>
+          <div className="toggle-arrow">
+            <button 
+              className="arrow-button" 
+              onClick={toggleCollapse} 
+              aria-label="Expand sidebar"
             >
-              <polyline points="13 17 18 12 13 7"></polyline>
-            </svg>
-          </button>
-        </div>
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="18" 
+                height="18" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <polyline points="13 17 18 12 13 7"></polyline>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -291,7 +294,11 @@ const ChatList = () => {
   return (
     <>
       <div className='chatList'>
-        <div className="dashboard-header">
+        <div className="sidebar-header">
+          <Link to="/" className='sidebar-logo'>
+            <img src="/logo.png" alt="" />
+            <span>DrugMate</span>
+          </Link>
           <div className="toggle-arrow">
             <button 
               className="arrow-button" 
@@ -313,7 +320,6 @@ const ChatList = () => {
               </svg>
             </button>
           </div>
-          <span className='title'>DASHBOARD</span>
         </div>
         
         <div className="actions">
@@ -339,11 +345,6 @@ const ChatList = () => {
             </svg>
           </Link>
         </div>
-        <div className="navigation-links">
-          <Link to="/">Explore DrugMate</Link>
-          <Link to="/">Contact</Link>
-        </div>
-        <hr />
         
         <div className='list'>
           {isPending
