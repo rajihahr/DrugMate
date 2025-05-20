@@ -45,13 +45,37 @@ app.get("/api/upload", (req, res) => {
 
 app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
   const userId = req.auth.userId;
-  const {text} = req.body;
+  const { text, useGemini, chatType, drugCheck, isEmergency } = req.body;
   
   try {
+    // Determine initial message and title based on chat type
+    let initialMessage = text || "New Chat";
+    let chatTitle = text ? text.substring(0, 40) : "New Chat";
+    
+    // If using GeminiService for drug interactions
+    if (useGemini && chatType === "drugInteraction" && drugCheck) {
+      // Generate the drug interaction prompt using GeminiService
+      initialMessage = geminiService.createDrugInteractionPrompt(
+        drugCheck.drug1Info, 
+        drugCheck.drug2Info
+      );
+      chatTitle = "Drug Interaction Check";
+    }
+    
+    // If using GeminiService for emergency assistance
+    if (useGemini && chatType === "emergency") {
+      // Generate the emergency prompt using GeminiService
+      initialMessage = geminiService.createEmergencyPrompt();
+      chatTitle = "Emergency Assistance";
+    }
+    
     // CREATE A NEW CHAT 
     const newChat = new Chat({
       userId: userId,
-      history: [{role: "user", parts: [{text}]}]
+      history: [{role: "user", parts: [{text: initialMessage}]}],
+      chatType: chatType || "general", // Store chat type for future reference
+      ...(drugCheck && { drugCheck }), // Store drug check info if provided
+      ...(isEmergency && { isEmergency: true }) // Flag if it's an emergency chat
     });
 
     const savedChat = await newChat.save();
@@ -65,27 +89,28 @@ app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
         chats: [
           {
             _id: savedChat.id,
-            title: text.substring(0,10),
+            title: chatTitle,
           },
         ],
       });
 
-      await newUserChats.save()
+      await newUserChats.save();
+      res.status(201).send(savedChat._id);
     } else {
       //IF EXISTS, PUSH CHAT TO EXISTING ARRAY
       await UserChats.updateOne({userId:userId}, {
         $push: {
           chats: {
             _id: savedChat._id,
-            title: text.substring(0,40),
+            title: chatTitle,
           },
         },
       });
-      res.status(201).send(newChat._id);
+      res.status(201).send(savedChat._id);
     }
   } catch(err){
-    console.log(err)
-    res.status(500).send("Error creating chat!")
+    console.log(err);
+    res.status(500).send("Error creating chat!");
   }
 });
 
@@ -111,7 +136,7 @@ app.delete("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
 });
 
 app.post("/api/generate", ClerkExpressRequireAuth(), async (req, res) => {
-  const { chatId, message, img } = req.body;
+  const { chatId, message, img, useGemini, chatType } = req.body;
   const userId = req.auth.userId;
   
   try {
@@ -122,11 +147,17 @@ app.post("/api/generate", ClerkExpressRequireAuth(), async (req, res) => {
       return res.status(404).send("Chat not found");
     }
     
-    // Generate response using our Gemini service
+    // Determine which chat type to use
+    const effectiveChatType = chatType || chat.chatType || "general";
+    
+    // Generate response using our Gemini service with the appropriate chat type
     const aiResponse = await geminiService.generateResponse(
       chat.history, 
       message,
-      { maxTokens: 1024 }
+      { 
+        maxTokens: 1024,
+        chatType: effectiveChatType  // Pass chat type to GeminiService
+      }
     );
     
     // Update chat history with the user message and AI response

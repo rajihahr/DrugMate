@@ -68,12 +68,86 @@ IMPORTANT: Always maintain a helpful, informative tone while prioritizing user s
   }
   
   /**
-   * Creates a new model instance with the system prompt
+   * Creates a new model instance with the appropriate system prompt based on chat type
    */
-  getModel(modelName = "gemini-2.0-flash") {
+  getModel(chatType = "general", modelName = "gemini-2.0-flash") {
+    // Select the appropriate system prompt based on chat type
+    let systemInstruction = this.systemPrompt; // Default system prompt
+    
+    if (chatType === "drugInteraction") {
+      systemInstruction = this.systemPrompt + `
+
+ADDITIONAL GUIDELINES FOR DRUG INTERACTION CHECKS:
+
+When responding to drug interaction queries:
+1. Clearly state if there is a known interaction between the medications
+2. Classify the severity of the interaction (minor, moderate, severe)
+3. Explain the potential effects of taking both medications together
+4. Provide general guidance on managing the interaction (spacing doses, monitoring for symptoms, etc.)
+5. Suggest when to consult a healthcare provider about the interaction
+6. Note any specific populations at higher risk from the interaction (elderly, those with certain conditions, etc.)
+
+Present information in these sections:
+## Interaction Overview
+(Brief statement of whether an interaction exists and its severity)
+
+## Potential Effects
+(What might happen if taken together)
+
+## Management Considerations
+(General guidance on how to manage the interaction)
+
+## When to Seek Medical Advice
+(Circumstances where a healthcare provider should be consulted)
+
+## Additional Information
+(Any other relevant details about the medications)
+
+## Disclaimer
+(Standard medical disclaimer)
+
+Remember to note if information is limited about certain drug combinations and emphasize the importance of pharmacist or doctor consultation.`;
+    } else if (chatType === "emergency") {
+      systemInstruction = this.systemPrompt + `
+
+ADDITIONAL GUIDELINES FOR EMERGENCY ASSISTANCE:
+
+When responding to potential medical emergencies:
+1. FIRST ASSESS SEVERITY - Ask clear questions to determine urgency
+2. For life-threatening emergencies, IMMEDIATELY advise calling 911/emergency services
+3. Provide simple, step-by-step first aid guidance while waiting for emergency services
+4. For non-emergencies, offer supportive guidance while emphasizing professional care
+5. Ask focused questions about specific symptoms to better assess the situation
+6. Use a calm, reassuring tone while remaining factual and practical
+7. At appropriate times, suggest finding nearby healthcare facilities
+
+Present emergency information in these sections:
+## Assessment
+(Brief statement about the apparent severity and immediate steps)
+
+## Immediate Actions
+(What to do right now - call 911, basic first aid, etc.)
+
+## Key Information
+(Important details about the condition or symptoms)
+
+## Next Steps
+(What to do after immediate actions are taken)
+
+## When to Seek Medical Care
+(Clear guidance on when professional help is needed)
+
+## Disclaimer
+(Standard medical disclaimer with emphasis on emergency care)
+
+CRITICAL: For severe symptoms such as difficulty breathing, chest pain, severe bleeding, loss of consciousness, stroke symptoms, or severe allergic reactions, ALWAYS emphasize immediate emergency services (911).
+
+Maintain a calm, authoritative tone that inspires confidence while prioritizing user safety above all else.`;
+    }
+    
     return this.genAI.getGenerativeModel({
       model: modelName,
-      systemInstruction: this.systemPrompt,
+      systemInstruction: systemInstruction,
       safetySettings: this.safetySettings,
       generationConfig: {
         temperature: 0.3, // Lower temperature for more consistent responses
@@ -88,11 +162,12 @@ IMPORTANT: Always maintain a helpful, informative tone while prioritizing user s
    * Processes a chat history and generates a response
    * @param {Array} history - Chat history in the expected format
    * @param {String} question - The current question
-   * @param {Object} options - Additional options
+   * @param {Object} options - Additional options including chatType
    */
   async generateResponse(history, question, options = {}) {
     try {
-      const model = this.getModel(options.modelName);
+      const chatType = options.chatType || "general";
+      const model = this.getModel(chatType, options.modelName);
       
       // Format history for Gemini
       const formattedHistory = this.formatChatHistory(history);
@@ -117,6 +192,38 @@ IMPORTANT: Always maintain a helpful, informative tone while prioritizing user s
       console.error("Error generating response:", error);
       return "I'm sorry, I encountered an error while processing your request. Please try again later.";
     }
+  }
+  
+  /**
+   * Creates a specialized prompt for drug interaction checks
+   * @param {Object} drug1 - First drug information
+   * @param {Object} drug2 - Second drug information
+   * @returns {String} Formatted prompt for drug interaction check
+   */
+  createDrugInteractionPrompt(drug1 = {}, drug2 = {}) {
+    const drug1Name = drug1?.name || "Unknown Drug";
+    const drug2Name = drug2?.name || "Unknown Drug";
+    
+    const drug1Ingredients = drug1?.ingredients?.join(", ") || "Unknown";
+    const drug2Ingredients = drug2?.ingredients?.join(", ") || "Unknown";
+    
+    return `Check for interactions between these two drugs:
+    Drug 1: ${drug1Name} (Ingredients: ${drug1Ingredients})
+    Drug 2: ${drug2Name} (Ingredients: ${drug2Ingredients})
+    
+    Please provide information about potential interactions between these medications, including:
+    1. Severity of any interactions (mild, moderate, severe)
+    2. What effects might occur if taken together
+    3. Recommendations for safe use
+    4. Alternative options if applicable`;
+  }
+  
+  /**
+   * Creates a specialized prompt for emergency assistance
+   * @returns {String} Formatted prompt for emergency assistance
+   */
+  createEmergencyPrompt() {
+    return `I need emergency assistance or medical advice. Please help me assess my situation and understand what I should do. If I describe a serious medical emergency, please remind me to call emergency services (911) immediately, and provide first aid guidance while waiting for help. If my situation is less urgent, please provide appropriate guidance and support.`;
   }
   
   /**
@@ -169,7 +276,7 @@ IMPORTANT: Always maintain a helpful, informative tone while prioritizing user s
     return formattedResponse;
   }
   
-    // Generates a summary of a chat conversation
+  // Generates a summary of a chat conversation
   async generateSummary(chatContent) {
     try {
       const model = this.getModel();

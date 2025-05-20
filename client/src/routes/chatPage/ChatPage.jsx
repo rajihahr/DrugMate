@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Upload from '../../components/upload/Upload';
 import DrugInteractionSuggestion from '../../components/drugInteractionSuggestion/DrugInteractionSuggestion';
+import EmergencySuggestion from '../../components/emergencySuggestion/EmergencySuggestion';
 import FloatingActionButton from '../../components/floatingActionButton/FloatingActionButton';
 
 const ChatPage = () => {
@@ -24,6 +25,9 @@ const ChatPage = () => {
   
   // State to track if we should show drug interaction suggestion
   const [showDrugInteractionSuggestion, setShowDrugInteractionSuggestion] = useState(false);
+  
+  // State to track if we should show emergency suggestion
+  const [showEmergencySuggestion, setShowEmergencySuggestion] = useState(false);
   
   const endRef = useRef(null);
   const formRef = useRef(null);
@@ -48,6 +52,16 @@ const ChatPage = () => {
       // Clear the flag so we don't show it again if the chat continues
       sessionStorage.removeItem(`chat_${chatId}_drug_interaction`);
     }
+    
+    // Check if this is an emergency chat
+    const isEmergencyChat = sessionStorage.getItem(`chat_${chatId}_emergency`);
+    if (isEmergencyChat === "true" && data && data.history.length > 1) {
+      // Show suggestion if AI has responded at least once to the emergency query
+      setShowEmergencySuggestion(true);
+      
+      // Clear the flag so we don't show it again if the chat continues
+      sessionStorage.removeItem(`chat_${chatId}_emergency`);
+    }
   }, [chatId, data]);
   
   // Scroll to bottom when messages change
@@ -63,6 +77,10 @@ const ChatPage = () => {
       setIsGenerating(true);
       setError("");
       
+      // Check if this is a drug interaction or emergency chat
+      const isDrugInteractionChat = sessionStorage.getItem(`chat_${chatId}_drug_interaction`) === "true";
+      const isEmergencyChat = sessionStorage.getItem(`chat_${chatId}_emergency`) === "true";
+      
       return fetch(`${import.meta.env.VITE_API_URL}/api/generate`, {
         method: "POST",
         credentials: "include",
@@ -73,6 +91,9 @@ const ChatPage = () => {
           chatId: chatId,
           message,
           img: img?.dbData?.filePath || undefined,
+          useGemini: true, // Always use GeminiService for better medical responses
+          chatType: isDrugInteractionChat ? "drugInteraction" : 
+                    isEmergencyChat ? "emergency" : "general"
         }),
       }).then((res) => {
         if (!res.ok) {
@@ -112,8 +133,9 @@ const ChatPage = () => {
     const text = e.target.text.value;
     if (!text || text.trim() === "") return;
     
-    // Hide drug interaction suggestion when user sends a new message
+    // Hide suggestion components when user sends a new message
     setShowDrugInteractionSuggestion(false);
+    setShowEmergencySuggestion(false);
     
     generateResponseMutation.mutate(text);
   };
@@ -135,6 +157,21 @@ const ChatPage = () => {
     }
   }, [data]); // Only depend on data changes, not isGenerating
   
+  // Function to detect if a message contains emergency-related information
+  const containsEmergencyInfo = (message) => {
+    if (!message || !message.parts || !message.parts[0] || !message.parts[0].text) {
+      return false;
+    }
+    
+    const text = message.parts[0].text.toLowerCase();
+    return (text.includes('emergency') || 
+            text.includes('urgent') ||
+            text.includes('hospital') ||
+            text.includes('ambulance') ||
+            text.includes('911') ||
+            (text.includes('medical') && text.includes('help')));
+  };
+  
   // Function to detect if a message contains drug interaction information
   const containsDrugInteractionInfo = (message) => {
     if (!message || !message.parts || !message.parts[0] || !message.parts[0].text) {
@@ -148,13 +185,22 @@ const ChatPage = () => {
             (text.includes('drug') && text.includes('effects')));
   };
   
-  // Check the last message for drug interaction content
+  // Check the last message for drug interaction or emergency content
   useEffect(() => {
     if (data && data.history && data.history.length > 1) {
       const lastMessage = data.history[data.history.length - 1];
-      if (lastMessage.role === 'assistant' && containsDrugInteractionInfo(lastMessage)) {
-        // If the last response from the assistant contains drug interaction info
-        setShowDrugInteractionSuggestion(true);
+      
+      // Only check assistant messages
+      if (lastMessage.role === 'assistant') {
+        // Check for drug interaction content
+        if (containsDrugInteractionInfo(lastMessage)) {
+          setShowDrugInteractionSuggestion(true);
+        }
+        
+        // Check for emergency-related content
+        if (containsEmergencyInfo(lastMessage)) {
+          setShowEmergencySuggestion(true);
+        }
       }
     }
   }, [data]);
@@ -190,6 +236,11 @@ const ChatPage = () => {
           {/* Show drug interaction suggestion if applicable */}
           {showDrugInteractionSuggestion && !isGenerating && (
             <DrugInteractionSuggestion />
+          )}
+          
+          {/* Show emergency suggestion if applicable */}
+          {showEmergencySuggestion && !isGenerating && (
+            <EmergencySuggestion />
           )}
           
           {/* Image preview for current upload */}

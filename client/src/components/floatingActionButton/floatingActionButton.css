@@ -1,5 +1,3 @@
-/* floatingActionButton.css */
-
 .floating-action-button-container {
   position: fixed;
   bottom: 30px;
@@ -79,4 +77,17 @@
 .fab-menu-item span {
   font-size: 15px;
   font-weight: 500;
+}
+
+.fab-menu-item.emergency {
+  color: #333;
+  border-top: 1px solid #eee;
+}
+
+.fab-menu-item.emergency svg {
+  color: #e63946;
+}
+
+.fab-menu-item.emergency:hover {
+  background-color: #fff8f8;
 }

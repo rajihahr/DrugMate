@@ -1,0 +1,228 @@
+.emergency-suggestion {
+  margin: 15px 0 25px;
+  padding: 15px;
+  background-color: #fff8f8;
+  border-radius: 10px;
+  border-left: 4px solid #e63946;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.suggestion-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.suggestion-header svg {
+  color: #e63946;
+}
+
+.suggestion-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.suggestion-content p {
+  margin: 0 0 15px 0;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.find-healthcare-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background-color: #e63946;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.find-healthcare-button:hover {
+  background-color: #d62f3c;
+}
+
+.find-healthcare-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Loading state */
+.location-loading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+}
+
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(230, 57, 70, 0.2);
+  border-top: 3px solid #e63946;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error state */
+.location-error {
+  background-color: rgba(230, 57, 70, 0.1);
+  border-radius: 5px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.retry-button {
+  background-color: transparent;
+  color: #e63946;
+  border: 1px solid #e63946;
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+
+.retry-button:hover {
+  background-color: rgba(230, 57, 70, 0.1);
+}
+
+/* Success state */
+.nearby-facilities {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.facilities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.facility-card {
+  background-color: white;
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.facility-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.facility-header h4 {
+  margin: 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.distance {
+  font-size: 13px;
+  color: #666;
+}
+
+.facility-address {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.facility-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.facility-phone {
+  font-size: 13px;
+  color: #555;
+}
+
+.facility-status {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.facility-status.open {
+  background-color: rgba(39, 174, 96, 0.1);
+  color: #27ae60;
+}
+
+.facility-status.closed {
+  background-color: rgba(230, 57, 70, 0.1);
+  color: #e63946;
+}
+
+.directions-link {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #3A8D8D;
+  text-decoration: none;
+  margin-top: 5px;
+}
+
+.maps-loading {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  margin-top: 5px;
+}
+
+.maps-error {
+  font-size: 12px;
+  color: #e63946;
+  font-style: italic;
+  margin-top: 5px;
+}
+
+.facility-status.unknown {
+  background-color: rgba(180, 180, 180, 0.1);
+  color: #888;
+}
+
+/* Map container */
+.map-container {
+  margin-top: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.map-loading {
+  height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  color: #666;
+  font-size: 14px;
+}

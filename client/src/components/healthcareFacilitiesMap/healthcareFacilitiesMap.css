@@ -1,0 +1,77 @@
+.healthcare-facilities-map {
+  width: 100%;
+  margin: 15px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.facility-info-window {
+  padding: 5px;
+  max-width: 250px;
+}
+
+.facility-info-window h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.facility-info-window p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.facility-distance {
+  font-size: 12px !important;
+  color: #666 !important;
+}
+
+.facility-phone {
+  font-weight: 500;
+}
+
+.facility-status-container {
+  margin: 8px 0;
+}
+
+.facility-status-tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.facility-status-tag.open {
+  background-color: rgba(39, 174, 96, 0.1);
+  color: #27ae60;
+}
+
+.facility-status-tag.closed {
+  background-color: rgba(230, 57, 70, 0.1);
+  color: #e63946;
+}
+
+.facility-status-tag.unknown {
+  background-color: rgba(180, 180, 180, 0.1);
+  color: #888;
+}
+
+.directions-button {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 12px;
+  background-color: #3A8D8D;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.directions-button:hover {
+  background-color: #2a6c6c;
+}

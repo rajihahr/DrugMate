@@ -186,17 +186,6 @@ const DrugInteractionPage = () => {
     mutationFn: () => {
       setIsSubmitting(true);
       
-      // Create initial message about drug interaction check with identified drugs
-      const drug1Name = drug1?.identifiedDrug?.name || "Unknown Drug";
-      const drug2Name = drug2?.identifiedDrug?.name || "Unknown Drug";
-      
-      const drug1Ingredients = drug1?.identifiedDrug?.ingredients?.join(", ") || "Unknown";
-      const drug2Ingredients = drug2?.identifiedDrug?.ingredients?.join(", ") || "Unknown";
-      
-      const message = `Check for interactions between these two drugs:
-      Drug 1: ${drug1Name} (Ingredients: ${drug1Ingredients})
-      Drug 2: ${drug2Name} (Ingredients: ${drug2Ingredients})`;
-      
       return fetch(`${import.meta.env.VITE_API_URL}/api/chats`, {
         method: "POST",
         credentials: "include",
@@ -204,7 +193,8 @@ const DrugInteractionPage = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          text: message,
+          useGemini: true, // Flag to use GeminiService
+          chatType: "drugInteraction", // Specify chat type for GeminiService
           drugCheck: {
             drug1Image: drug1?.dbData?.filePath,
             drug2Image: drug2?.dbData?.filePath,
