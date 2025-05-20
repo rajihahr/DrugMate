@@ -256,13 +256,15 @@ const DrugInteractionPage = () => {
   };
   
   return (
-    <div className="drug-interaction-page">
-      <div className="drug-interaction-container">
-        <h1>Drug Interaction Checker</h1>
-        <p className="description">
-          Scan your drugs so we can check the drugs and check for
-          any potential interactions to keep you safe.
-        </p>
+    <div className="page-container">
+      <div className="page-content">
+        <div className="page-header">
+          <h1 className="page-title drug-interaction-title">Drug Interaction Checker</h1>
+          <p className="page-description">
+            Scan your drugs so we can check the drugs and check for
+            any potential interactions to keep you safe.
+          </p>
+        </div>
         
         <div className="drug-inputs">
           <div className="drug-input">
@@ -424,24 +426,25 @@ const DrugInteractionPage = () => {
         
         <div className="action-buttons">
           <button 
-            className="check-button" 
+            className="primary-button check-button" 
             onClick={handleCheck}
             disabled={isSubmitting || (!drug1.dbData?.filePath && !drug2.dbData?.filePath)}
           >
             {isSubmitting ? "Checking..." : "Check Interactions"}
           </button>
           
-          {/* Add Clear All button */}
           <button 
-            className="clear-button"
+            className="secondary-button clear-button"
             onClick={handleClearAll}
             disabled={isSubmitting || (!drug1.dbData?.filePath && !drug2.dbData?.filePath)}
           >
             Clear All
           </button>
-          
+        </div>
+        
+        <div className="back-button-container">
           <button 
-            className="back-button"
+            className="outline-button back-button"
             onClick={() => navigate('/dashboard')}
             disabled={isSubmitting}
           >

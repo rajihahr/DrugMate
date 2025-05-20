@@ -50,13 +50,15 @@ const EmergencyPage = () => {
   };
   
   return (
-    <div className="emergency-page">
-      <div className="emergency-container">
-        <h1>Emergency Assistance</h1>
-        <p className="description">
-          If you're experiencing a medical emergency, please call emergency services immediately. 
-          If you need guidance or assistance, our AI can help assess your situation and provide appropriate support.
-        </p>
+    <div className="page-container">
+      <div className="page-content">
+        <div className="page-header">
+          <h1 className="page-title emergency-title">Emergency Assistance</h1>
+          <p className="page-description">
+            If you're experiencing a medical emergency, please call emergency services immediately. 
+            If you need guidance or assistance, our AI can help assess your situation and provide appropriate support.
+          </p>
+        </div>
         
         <div className="action-area">
           <div className="emergency-levels">
@@ -110,13 +112,15 @@ const EmergencyPage = () => {
           </div>
         </div>
         
-        <button
-          className="back-button"
-          onClick={() => navigate('/dashboard')}
-          disabled={isSubmitting}
-        >
-          Return to Chat
-        </button>
+        <div className="back-button-container">
+          <button
+            className="outline-button back-button"
+            onClick={() => navigate('/dashboard')}
+            disabled={isSubmitting}
+          >
+            Return to Chat
+          </button>
+        </div>
       </div>
     </div>
   );

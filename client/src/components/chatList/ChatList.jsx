@@ -1,5 +1,5 @@
 import './chatList.css'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from 'react';
 import jsPDF from 'jspdf';
@@ -15,6 +15,24 @@ const ChatList = () => {
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const menuRef = useRef(null);
+  
+  // Get the current chat ID from URL params
+  const { chatId } = useParams();
+  const location = useLocation();
+  
+  // Extract chat ID from URL if on a chat page
+  const getCurrentChatId = () => {
+    const pathParts = location.pathname.split('/');
+    if (pathParts.includes('chats')) {
+      const idx = pathParts.indexOf('chats');
+      if (idx + 1 < pathParts.length) {
+        return pathParts[idx + 1];
+      }
+    }
+    return null;
+  };
+  
+  const activeChatId = getCurrentChatId();
   
   // Toggle sidebar collapse state
   const toggleCollapse = () => {
@@ -261,30 +279,32 @@ const ChatList = () => {
   if (isCollapsed) {
     return (
       <div className='chatList'>
-        <div className="sidebar-header">
-          <Link to="/" className='logo-small'>
-            <img src="/logo.png" alt="DrugMate" />
-          </Link>
-          <div className="toggle-arrow">
-            <button 
-              className="arrow-button" 
-              onClick={toggleCollapse} 
-              aria-label="Expand sidebar"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="18" 
-                height="18" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
+        <div className="fixed-top-section">
+          <div className="sidebar-header">
+            <Link to="/" className='logo-small'>
+              <img src="/logo.png" alt="DrugMate" />
+            </Link>
+            <div className="toggle-arrow">
+              <button 
+                className="arrow-button" 
+                onClick={toggleCollapse} 
+                aria-label="Expand sidebar"
               >
-                <polyline points="13 17 18 12 13 7"></polyline>
-              </svg>
-            </button>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="18" 
+                  height="18" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <polyline points="13 17 18 12 13 7"></polyline>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -294,83 +314,92 @@ const ChatList = () => {
   return (
     <>
       <div className='chatList'>
-        <div className="sidebar-header">
-          <Link to="/" className='sidebar-logo'>
-            <img src="/logo.png" alt="" />
-            <span>DrugMate</span>
-          </Link>
-          <div className="toggle-arrow">
-            <button 
-              className="arrow-button" 
-              onClick={toggleCollapse} 
-              aria-label="Collapse sidebar"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="18" 
-                height="18" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
+        {/* Fixed top section containing header and search */}
+        <div className="fixed-top-section">
+          <div className="sidebar-header">
+            <Link to="/" className='sidebar-logo'>
+              <img src="/logo.png" alt="" />
+              <span>DrugMate</span>
+            </Link>
+            <div className="toggle-arrow">
+              <button 
+                className="arrow-button" 
+                onClick={toggleCollapse} 
+                aria-label="Collapse sidebar"
               >
-                <polyline points="11 17 6 12 11 7"></polyline>
-              </svg>
-            </button>
-          </div>
-        </div>
-        
-        <div className="actions">
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Search chats..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-            <div className="search-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="18" 
+                  height="18" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <polyline points="11 17 6 12 11 7"></polyline>
+                </svg>
+              </button>
             </div>
           </div>
-          <Link to="/dashboard" className="new-chat-button">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </Link>
+          
+          <div className="actions">
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Search chats..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input"
+              />
+              <div className="search-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
+            </div>
+            <Link to="/dashboard" className="new-chat-button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </Link>
+          </div>
         </div>
         
-        <div className='list'>
-          {isPending
-            ? "Loading..."
-            : error
-            ? "Something went wrong!"
-            : filteredChats?.length === 0
-            ? <div className="no-results">No chats found</div>
-            : filteredChats?.map((chat) => (
-              <div className="chat-item" key={chat._id}>
-                <Link to={`/dashboard/chats/${chat._id}`}>
-                  {chat.title}
-                </Link>
-                <button
-                  className="more-button"
-                  onClick={(e) => toggleMenu(e, chat._id)}
-                  aria-label="More options"
+        {/* Scrollable list container */}
+        <div className="list-container">
+          <div className='list'>
+            {isPending
+              ? "Loading..."
+              : error
+              ? "Something went wrong!"
+              : filteredChats?.length === 0
+              ? <div className="no-results">No chats found</div>
+              : filteredChats?.map((chat) => (
+                <div 
+                  className={`chat-item ${chat._id === activeChatId ? 'active' : ''}`} 
+                  key={chat._id}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="1"></circle>
-                    <circle cx="12" cy="5" r="1"></circle>
-                    <circle cx="12" cy="19" r="1"></circle>
-                  </svg>
-                </button>
-              </div>
-            ))}
+                  <Link to={`/dashboard/chats/${chat._id}`}>
+                    {chat.title}
+                  </Link>
+                  <button
+                    className="more-button"
+                    onClick={(e) => toggleMenu(e, chat._id)}
+                    aria-label="More options"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="1"></circle>
+                      <circle cx="12" cy="5" r="1"></circle>
+                      <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+          </div>
         </div>
       </div>
 
