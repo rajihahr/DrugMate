@@ -54,12 +54,21 @@ app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
     
     // If using GeminiService for drug interactions
     if (useGemini && chatType === "drugInteraction" && drugCheck) {
-      // Generate the drug interaction prompt using GeminiService
-      initialMessage = geminiService.createDrugInteractionPrompt(
-        drugCheck.drug1Info, 
-        drugCheck.drug2Info
-      );
-      chatTitle = "Drug Interaction Check";
+      console.log("Creating drug interaction chat with data:", drugCheck);
+      
+      // Check if we have the new multiple drugs format
+      if (drugCheck.drugs && Array.isArray(drugCheck.drugs)) {
+        // Use the new multi-drug prompt method
+        initialMessage = geminiService.createMultiDrugInteractionPrompt(drugCheck.drugs);
+        chatTitle = `Drug Interaction Check (${drugCheck.drugCount || drugCheck.drugs.length} drugs)`;
+      } else {
+        // Fallback to legacy format for compatibility
+        initialMessage = geminiService.createDrugInteractionPrompt(
+          drugCheck.drug1Info, 
+          drugCheck.drug2Info
+        );
+        chatTitle = "Drug Interaction Check";
+      }
     }
     
     // If using GeminiService for emergency assistance
@@ -68,6 +77,8 @@ app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
       initialMessage = geminiService.createEmergencyPrompt();
       chatTitle = "Emergency Assistance";
     }
+    
+    console.log("Creating chat with initial message:", initialMessage);
     
     // CREATE A NEW CHAT 
     const newChat = new Chat({
@@ -79,6 +90,7 @@ app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
     });
 
     const savedChat = await newChat.save();
+    console.log("Chat saved with ID:", savedChat._id);
 
     // CHECK IF THE USERCHATS EXISTS
     const userChats = await UserChats.find({userId: userId});
@@ -109,7 +121,7 @@ app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
       res.status(201).send(savedChat._id);
     }
   } catch(err){
-    console.log(err);
+    console.error("Error creating chat:", err);
     res.status(500).send("Error creating chat!");
   }
 });
@@ -136,7 +148,7 @@ app.delete("/api/chats/:id", ClerkExpressRequireAuth(), async (req, res) => {
 });
 
 app.post("/api/generate", ClerkExpressRequireAuth(), async (req, res) => {
-  const { chatId, message, img, useGemini, chatType } = req.body;
+  const { chatId, message, img, useGemini, chatType, isInitialResponse } = req.body;
   const userId = req.auth.userId;
   
   try {
@@ -150,6 +162,8 @@ app.post("/api/generate", ClerkExpressRequireAuth(), async (req, res) => {
     // Determine which chat type to use
     const effectiveChatType = chatType || chat.chatType || "general";
     
+    console.log("Generating response for chat type:", effectiveChatType);
+    
     // Generate response using our Gemini service with the appropriate chat type
     const aiResponse = await geminiService.generateResponse(
       chat.history, 
@@ -160,11 +174,22 @@ app.post("/api/generate", ClerkExpressRequireAuth(), async (req, res) => {
       }
     );
     
-    // Update chat history with the user message and AI response
-    const newItems = [
-      { role: "user", parts: [{ text: message }], ...(img && { img }) },
-      { role: "model", parts: [{ text: aiResponse }] }
-    ];
+    // Update chat history with the AI response
+    // If this is an initial response, don't add the user message again (it's already there)
+    let newItems;
+    
+    if (isInitialResponse) {
+      // Only add the AI response, user message is already in history
+      newItems = [
+        { role: "model", parts: [{ text: aiResponse }] }
+      ];
+    } else {
+      // Add both user message and AI response (normal flow)
+      newItems = [
+        { role: "user", parts: [{ text: message }], ...(img && { img }) },
+        { role: "model", parts: [{ text: aiResponse }] }
+      ];
+    }
     
     await Chat.updateOne(
       { _id: chatId, userId },

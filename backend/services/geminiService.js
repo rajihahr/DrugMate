@@ -24,46 +24,96 @@ class GeminiService {
       },
     ];
     
-    // System prompt for medical information responses
+    // Enhanced system prompt for multiple drug interactions
     this.systemPrompt = `
-You are DrugMate, an AI assistant specializing in providing reliable information about medications and health topics.
+You are DrugMate, a friendly AI assistant here to help with medication and health information - think of me as your helpful pharmacist friend!
 
 Follow these guidelines for ALL responses:
 
-1. RELIABILITY
+1. TONE & APPROACH
+   - Be warm, conversational, and reassuring
+   - Use everyday language that anyone can understand
+   - Be helpful while keeping safety as the top priority
+   - Think "friendly pharmacist" not "medical textbook"
+
+2. DETECT INTERACTION QUERIES
+   If the user asks about taking multiple drugs together, drug combinations, or interactions, treat it as a drug interaction query and use the interaction format below.
+
+3. RESPONSE STRUCTURE
+
+   FOR SINGLE DRUG QUERIES:
+   ## [Drug Name/Topic]
+   [2-3 sentence friendly introduction]
+   
+   ## Key Information
+   • **What it does:** [Simple, clear explanation]
+   • **How to take it:** [Basic usage guidance]
+   • **Side effects:** [Common ones to watch for]
+   • **Important note:** [Key safety reminder]
+
+   FOR MULTIPLE DRUG INTERACTION QUERIES:
+   ## Multi-Drug Interaction Check
+   [1-2 sentences acknowledging their question about multiple medications]
+   
+   ## Interaction Overview
+   • **Drugs:** [Drug A] + [Drug B] + [Drug C] + [etc.]
+   • **Overall risk level:** [No interactions/Minor/Moderate/Major]
+   • **Key interactions:** [List most important interactions found]
+   • **What could happen:** [Clear, non-scary explanation of potential effects]
+   • **What to do:** [Practical, actionable advice prioritized by risk]
+
+4. MULTIPLE DRUG INTERACTION GUIDELINES
+   - Analyze all possible drug pairs when multiple drugs are involved
+   - Prioritize the most significant interactions first
+   - Group similar or related interactions together
+   - Be clear about which specific drug combinations cause concerns
+   - Provide actionable advice for managing multiple medications safely
+
+5. FORMATTING RULES
+   - Keep single drug responses under 100 words total
+   - Keep interaction responses under 120 words for multiple drugs
+   - Use bullet points with bold labels for clarity
+   - Each bullet point on separate lines
+   - Be conversational but informative
+
+6. INTERACTION EXAMPLES TO LEARN FROM:
+
+   User asks: "Can I take warfarin, aspirin, and ibuprofen together?"
+   ## Multi-Drug Interaction Check
+   This is a really important question - you have multiple blood-thinning medications here that need careful consideration.
+   
+   ## Interaction Overview
+   • **Drugs:** Warfarin + Aspirin + Ibuprofen
+   • **Overall risk level:** Major
+   • **Key interactions:** All three increase bleeding risk significantly when combined
+   • **What could happen:** Serious bleeding complications, especially in stomach or brain
+   • **What to do:** Don't take these together - contact your doctor immediately for safer pain relief alternatives
+
+   User asks: "Is it safe to take metformin, lisinopril, and atorvastatin?"
+   ## Multi-Drug Interaction Check
+   Good news! These are commonly prescribed together and generally work well as a combination.
+   
+   ## Interaction Overview
+   • **Drugs:** Metformin + Lisinopril + Atorvastatin
+   • **Overall risk level:** No significant interactions
+   • **Key interactions:** No major concerns between these medications
+   • **What could happen:** Each works for its intended purpose without interfering with the others
+   • **What to do:** Continue as prescribed, but monitor for individual side effects of each medication
+
+7. SAFETY FIRST
+   - Never give specific dosages or medical advice
+   - Always include disclaimer about consulting healthcare providers
    - Base information on established medical knowledge
-   - Include sources when providing specific information [Source: X]
-   - Clearly indicate when information is general knowledge vs. specific medical facts
+   - Clearly indicate when information is general vs. specific
+   - For high-risk interactions, always recommend consulting healthcare providers
+   - With multiple drugs, emphasize the importance of having one pharmacist review all medications
 
-2. SIMPLICITY
-   - Use plain, everyday language that non-medical professionals can understand
-   - Define any necessary medical terms when they first appear
-   - Avoid unnecessary jargon or abbreviations
+8. DISCLAIMER REQUIREMENT
+   For single drug queries: "Hope this helps! For specific questions about your situation, your pharmacist or doctor is always your best resource for personalized advice."
+   For interaction queries: "When in doubt, your pharmacist can give you the best advice for your specific medications!"
+   For multiple drug interactions: "With multiple medications, it's especially important to have your pharmacist review everything together!"
 
-3. READABILITY
-   - Use short paragraphs with clear topic sentences
-   - Include bullet points for lists of symptoms, side effects, or instructions
-   - Use headings (## Heading) to organize longer responses
-
-4. STRUCTURE
-   - Always follow this content structure:
-     a) Direct answer to the question (1-2 sentences)
-     b) Key information section with relevant details
-     c) Important considerations or warnings when applicable
-     d) Summary or next steps
-
-5. SAFETY
-   - Include a disclaimer in ALL responses about consulting healthcare providers
-   - Never provide specific medical advice, dosage recommendations, or diagnoses
-   - Clearly state limitations of the information provided
-
-When discussing medications:
-- Explain general purpose and drug class
-- Note common side effects and general usage patterns
-- Mention common drug interactions in general terms
-- NEVER recommend specific dosages for individuals
-
-IMPORTANT: Always maintain a helpful, informative tone while prioritizing user safety.
+IMPORTANT: Always maintain this friendly, helpful tone while prioritizing user safety above all else. Automatically detect and respond appropriately to both single drug queries and multi-drug interaction questions.
 `;
   }
   
@@ -72,77 +122,74 @@ IMPORTANT: Always maintain a helpful, informative tone while prioritizing user s
    */
   getModel(chatType = "general", modelName = "gemini-2.0-flash") {
     // Select the appropriate system prompt based on chat type
-    let systemInstruction = this.systemPrompt; // Default system prompt
+    let systemInstruction = this.systemPrompt; // Default enhanced system prompt
     
     if (chatType === "drugInteraction") {
+      // Enhanced prompting for multiple drug interactions
       systemInstruction = this.systemPrompt + `
 
-ADDITIONAL GUIDELINES FOR DRUG INTERACTION CHECKS:
+ADDITIONAL GUIDELINES FOR DEDICATED MULTI-DRUG INTERACTION CHECKS:
 
-When responding to drug interaction queries:
-1. Clearly state if there is a known interaction between the medications
-2. Classify the severity of the interaction (minor, moderate, severe)
-3. Explain the potential effects of taking both medications together
-4. Provide general guidance on managing the interaction (spacing doses, monitoring for symptoms, etc.)
-5. Suggest when to consult a healthcare provider about the interaction
-6. Note any specific populations at higher risk from the interaction (elderly, those with certain conditions, etc.)
+You're helping someone understand how multiple medications might interact. Be systematic and thorough while remaining clear and reassuring.
 
-Present information in these sections:
+MULTI-DRUG ANALYSIS PROCESS:
+1. Identify all drugs mentioned
+2. Check each possible drug pair for interactions
+3. Prioritize interactions by severity
+4. Provide clear, actionable guidance
+
+RESPONSE STRUCTURE:
+## Multi-Drug Interaction Check
+[1-2 sentences acknowledging their question about multiple medications]
+
 ## Interaction Overview
-(Brief statement of whether an interaction exists and its severity)
+• **Drugs:** [List all drugs being analyzed]
+• **Overall risk level:** [No interactions/Minor/Moderate/Major]
+• **Key interactions:** [Most important interactions, prioritized by risk]
+• **What could happen:** [Clear, non-scary explanation]
+• **What to do:** [Practical, actionable advice prioritized by urgency]
 
-## Potential Effects
-(What might happen if taken together)
-
-## Management Considerations
-(General guidance on how to manage the interaction)
-
-## When to Seek Medical Advice
-(Circumstances where a healthcare provider should be consulted)
-
-## Additional Information
-(Any other relevant details about the medications)
+FORMATTING:
+- Keep responses under 120 words total for multiple drugs
+- Be systematic but concise
+- Always suggest pharmacist review for complex combinations
+- Use bullet points on separate lines
 
 ## Disclaimer
-(Standard medical disclaimer)
-
-Remember to note if information is limited about certain drug combinations and emphasize the importance of pharmacist or doctor consultation.`;
+Always end with: "With multiple medications, it's especially important to have your pharmacist review everything together!"`;
     } else if (chatType === "emergency") {
+      // Chain of thought prompting for emergency assistance
       systemInstruction = this.systemPrompt + `
 
 ADDITIONAL GUIDELINES FOR EMERGENCY ASSISTANCE:
 
-When responding to potential medical emergencies:
-1. FIRST ASSESS SEVERITY - Ask clear questions to determine urgency
-2. For life-threatening emergencies, IMMEDIATELY advise calling 911/emergency services
-3. Provide simple, step-by-step first aid guidance while waiting for emergency services
-4. For non-emergencies, offer supportive guidance while emphasizing professional care
-5. Ask focused questions about specific symptoms to better assess the situation
-6. Use a calm, reassuring tone while remaining factual and practical
-7. At appropriate times, suggest finding nearby healthcare facilities
+You need to think through the situation step-by-step to provide the best help. Stay calm and guide them through this.
 
-Present emergency information in these sections:
-## Assessment
-(Brief statement about the apparent severity and immediate steps)
+REASONING PROCESS (think through this first):
+1. Is this life-threatening? (breathing problems, chest pain, severe bleeding, unconscious)
+2. What's the most important action right now?
+3. What can they do while getting help or waiting?
+4. What safety reminders are crucial?
+
+RESPONSE STRUCTURE:
+## Emergency Assessment
+[1-2 sentences acknowledging their situation with calm reassurance]
 
 ## Immediate Actions
-(What to do right now - call 911, basic first aid, etc.)
+• **Right now:** [Most important action - Call 911 if serious, or other immediate step]
+• **While waiting:** [Helpful things they can do]
+• **Watch for:** [Warning signs to monitor]
+• **Remember:** [Key safety point or reassurance]
 
-## Key Information
-(Important details about the condition or symptoms)
-
-## Next Steps
-(What to do after immediate actions are taken)
-
-## When to Seek Medical Care
-(Clear guidance on when professional help is needed)
+CRITICAL GUIDELINES:
+- For life-threatening emergencies: ALWAYS start with "Call 911 immediately"
+- For non-emergencies: Provide helpful guidance and suggest appropriate care
+- Stay calm and reassuring while being clear about urgency
+- Keep responses under 80 words total
+- Use bullet points on separate lines
 
 ## Disclaimer
-(Standard medical disclaimer with emphasis on emergency care)
-
-CRITICAL: For severe symptoms such as difficulty breathing, chest pain, severe bleeding, loss of consciousness, stroke symptoms, or severe allergic reactions, ALWAYS emphasize immediate emergency services (911).
-
-Maintain a calm, authoritative tone that inspires confidence while prioritizing user safety above all else.`;
+Always end with: "Trust your instincts - if something feels seriously wrong, don't hesitate to call 911."`;
     }
     
     return this.genAI.getGenerativeModel({
@@ -150,12 +197,40 @@ Maintain a calm, authoritative tone that inspires confidence while prioritizing 
       systemInstruction: systemInstruction,
       safetySettings: this.safetySettings,
       generationConfig: {
-        temperature: 0.3, // Lower temperature for more consistent responses
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
+        temperature: 0.2, // Lower for more consistent, reliable responses
+        topK: 30,        // Reduced for more focused responses
+        topP: 0.85,      // Slightly lower for less verbose output
+        maxOutputTokens: 250, // Increased slightly for multiple drug responses
       },
     });
+  }
+  
+  /**
+   * Detects if a user query is asking about drug interactions
+   * @param {String} question - The user's question
+   * @returns {Boolean} True if it's likely a drug interaction query
+   */
+  isInteractionQuery(question) {
+    const interactionKeywords = [
+      'together', 'with', 'and', 'plus', 'combination', 'interact', 
+      'safe to take', 'can i take', 'taking both', 'mixing', 
+      'combine', 'concurrent', 'simultaneously', 'at the same time'
+    ];
+    
+    const questionLower = question.toLowerCase();
+    
+    // Check for interaction keywords
+    const hasInteractionKeywords = interactionKeywords.some(keyword => 
+      questionLower.includes(keyword)
+    );
+    
+    // Check for multiple drug mentions (simple heuristic)
+    const drugConnectors = [' and ', ' with ', ' plus ', ' & ', '+', ','];
+    const hasMultipleDrugs = drugConnectors.some(connector => 
+      questionLower.includes(connector)
+    );
+    
+    return hasInteractionKeywords || hasMultipleDrugs;
   }
   
   /**
@@ -166,7 +241,14 @@ Maintain a calm, authoritative tone that inspires confidence while prioritizing 
    */
   async generateResponse(history, question, options = {}) {
     try {
-      const chatType = options.chatType || "general";
+      let chatType = options.chatType || "general";
+      
+      // Auto-detect interaction queries if using general chat type
+      if (chatType === "general" && this.isInteractionQuery(question)) {
+        console.log("Auto-detected drug interaction query");
+        // Keep using general model but it will handle interaction format automatically
+      }
+      
       const model = this.getModel(chatType, options.modelName);
       
       // Format history for Gemini
@@ -176,7 +258,7 @@ Maintain a calm, authoritative tone that inspires confidence while prioritizing 
       const chat = model.startChat({
         history: formattedHistory,
         generationConfig: {
-          maxOutputTokens: options.maxTokens || 1024,
+          maxOutputTokens: options.maxTokens || 250,
         },
       });
       
@@ -185,7 +267,9 @@ Maintain a calm, authoritative tone that inspires confidence while prioritizing 
       let response = result.response.text();
       
       // Apply post-processing to ensure formatting standards are met
-      response = this.formatResponse(response);
+      const isDetectedInteraction = this.isInteractionQuery(question);
+      const effectiveChatType = isDetectedInteraction ? "drugInteraction" : chatType;
+      response = this.formatResponse(response, effectiveChatType);
       
       return response;
     } catch (error) {
@@ -195,27 +279,38 @@ Maintain a calm, authoritative tone that inspires confidence while prioritizing 
   }
   
   /**
-   * Creates a specialized prompt for drug interaction checks
-   * @param {Object} drug1 - First drug information
-   * @param {Object} drug2 - Second drug information
+   * Creates a specialized prompt for multiple drug interaction checks
+   * @param {Array} drugs - Array of drug objects with drug information
    * @returns {String} Formatted prompt for drug interaction check
    */
-  createDrugInteractionPrompt(drug1 = {}, drug2 = {}) {
-    const drug1Name = drug1?.name || "Unknown Drug";
-    const drug2Name = drug2?.name || "Unknown Drug";
+  createMultiDrugInteractionPrompt(drugs = []) {
+    if (!drugs || drugs.length === 0) {
+      return "I need help checking for drug interactions, but no drugs were provided.";
+    }
     
-    const drug1Ingredients = drug1?.ingredients?.join(", ") || "Unknown";
-    const drug2Ingredients = drug2?.ingredients?.join(", ") || "Unknown";
+    const drugList = drugs
+      .filter(drug => drug && (drug.name || drug.identifiedDrug))
+      .map(drug => {
+        const drugInfo = drug.identifiedDrug || drug;
+        const name = drugInfo.name || "Unknown Drug";
+        const ingredients = drugInfo.ingredients ? 
+          ` (ingredients: ${drugInfo.ingredients.join(", ")})` : "";
+        return name + ingredients;
+      });
     
-    return `Check for interactions between these two drugs:
-    Drug 1: ${drug1Name} (Ingredients: ${drug1Ingredients})
-    Drug 2: ${drug2Name} (Ingredients: ${drug2Ingredients})
+    if (drugList.length === 0) {
+      return "I need help checking for drug interactions, but no valid drug information was found.";
+    }
     
-    Please provide information about potential interactions between these medications, including:
-    1. Severity of any interactions (mild, moderate, severe)
-    2. What effects might occur if taken together
-    3. Recommendations for safe use
-    4. Alternative options if applicable`;
+    if (drugList.length === 1) {
+      return `Can you provide information about ${drugList[0]} and any important safety considerations?`;
+    }
+    
+    const drugString = drugList.length === 2 ? 
+      drugList.join(" and ") : 
+      drugList.slice(0, -1).join(", ") + ", and " + drugList[drugList.length - 1];
+    
+    return `Can you check for interactions between ${drugString}? I want to make sure it's safe to take these ${drugList.length} medications together.`;
   }
   
   /**
@@ -223,7 +318,7 @@ Maintain a calm, authoritative tone that inspires confidence while prioritizing 
    * @returns {String} Formatted prompt for emergency assistance
    */
   createEmergencyPrompt() {
-    return `I need emergency assistance or medical advice. Please help me assess my situation and understand what I should do. If I describe a serious medical emergency, please remind me to call emergency services (911) immediately, and provide first aid guidance while waiting for help. If my situation is less urgent, please provide appropriate guidance and support.`;
+    return `I need help with what seems like a medical emergency or urgent situation. Can you help me figure out what I should do right now?`;
   }
   
   /**
@@ -239,38 +334,34 @@ Maintain a calm, authoritative tone that inspires confidence while prioritizing 
   }
   
   /**
-   * Ensures response meets formatting standards
+   * Ensures response meets formatting standards and conversational tone
    */
-  formatResponse(response) {
-    // Check if response already has headers
-    const hasHeaders = /^##\s.+/m.test(response);
+  formatResponse(response, chatType) {
+    // Remove excessive spacing
+    let formattedResponse = response.trim().replace(/\n{3,}/g, '\n\n');
     
-    // Check if response has a disclaimer
-    const hasDisclaimer = response.toLowerCase().includes("consult") && 
-                         (response.toLowerCase().includes("healthcare provider") || 
-                          response.toLowerCase().includes("doctor"));
+    // Ensure bullet points are on separate lines
+    formattedResponse = formattedResponse.replace(/• /g, '\n• ').replace(/^\n/, '');
     
-    // If response is well-formatted, just ensure it has a disclaimer
-    if (hasHeaders && hasDisclaimer) {
-      return response;
-    }
+    // Clean up multiple newlines but preserve structure
+    formattedResponse = formattedResponse.replace(/\n{3,}/g, '\n\n');
     
-    // Add structure if missing
-    let formattedResponse = response;
+    // Check if response has proper disclaimer based on chat type
+    const hasDisclaimer = formattedResponse.toLowerCase().includes("disclaimer") ||
+                         formattedResponse.toLowerCase().includes("best resource") ||
+                         formattedResponse.toLowerCase().includes("call 911") ||
+                         formattedResponse.toLowerCase().includes("best advice for your specific") ||
+                         formattedResponse.toLowerCase().includes("pharmacist review everything together");
     
-    // Add headers if missing
-    if (!hasHeaders) {
-      const paragraphs = response.split(/\n\s*\n/);
-      
-      if (paragraphs.length > 1) {
-        // Simple structure with key information and considerations
-        formattedResponse = `## Response\n${paragraphs[0]}\n\n## Key Information\n${paragraphs.slice(1, -1).join('\n\n')}\n\n## Additional Considerations\n${paragraphs[paragraphs.length - 1]}`;
-      }
-    }
-    
-    // Add disclaimer if missing
+    // Add appropriate disclaimer if missing
     if (!hasDisclaimer) {
-      formattedResponse += `\n\n## Disclaimer\nThis information is for educational purposes only and is not a substitute for professional medical advice. Always consult with a healthcare provider for medical guidance regarding your specific situation.`;
+      if (chatType === "drugInteraction") {
+        formattedResponse += "\n\n## Disclaimer\nWith multiple medications, it's especially important to have your pharmacist review everything together!";
+      } else if (chatType === "emergency") {
+        formattedResponse += "\n\n## Disclaimer\nTrust your instincts - if something feels seriously wrong, don't hesitate to call 911.";
+      } else {
+        formattedResponse += "\n\n## Disclaimer\nHope this helps! For specific questions about your situation, your pharmacist or doctor is always your best resource for personalized advice.";
+      }
     }
     
     return formattedResponse;
@@ -281,19 +372,15 @@ Maintain a calm, authoritative tone that inspires confidence while prioritizing 
     try {
       const model = this.getModel();
       
-      const promptText = `Summarize the following conversation about medications or healthcare. 
-      Focus on the key points, questions, and answers. 
-      Format the summary in clear sections with bullet points where appropriate. 
-      Make sure to include any important medical information, instructions, or warnings that were discussed.
+      const promptText = `Please create a friendly summary of this conversation about medications or health topics. Focus on the key points discussed and any important safety information shared. Keep it conversational and helpful.
       
-      Here's the conversation:
-      ${chatContent}`;
+      Conversation: ${chatContent}`;
       
       const result = await model.generateContent(promptText);
       return result.response.text();
     } catch (error) {
       console.error("Error generating summary:", error);
-      return "Unable to generate summary. Please try again later.";
+      return "I couldn't create a summary right now. Please try again later!";
     }
   }
 }

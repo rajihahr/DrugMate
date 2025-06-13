@@ -1,5 +1,5 @@
 import './drugInteractionPage.css';
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { IKImage, IKContext, IKUpload } from 'imagekitio-react';
@@ -11,27 +11,48 @@ const DrugInteractionPage = () => {
   const urlEndpoint = import.meta.env.VITE_IMAGE_KIT_ENDPOINT;
   const publicKey = import.meta.env.VITE_IMAGE_KIT_PUBLIC_KEY;
   
-  // References for the upload components
-  const drug1UploadRef = useRef(null);
-  const drug2UploadRef = useRef(null);
+  // Create refs for uploads - we'll manage these separately
+  const uploadRefs = useRef({});
   
-  // State for both drug images
-  const [drug1, setDrug1] = useState({
+  // Function to get or create ref for a drug
+  const getUploadRef = (drugId) => {
+    if (!uploadRefs.current[drugId]) {
+      uploadRefs.current[drugId] = React.createRef();
+    }
+    return uploadRefs.current[drugId];
+  };
+  
+  // State for multiple drugs - using an array instead of individual drug1/drug2
+  const [drugs, setDrugs] = useState([
+    {
+      id: 1,
+      isLoading: false,
+      error: "",
+      dbData: {},
+      aiData: {},
+      extractedText: "",
+      identifiedDrug: null
+    },
+    {
+      id: 2,
+      isLoading: false,
+      error: "",
+      dbData: {},
+      aiData: {},
+      extractedText: "",
+      identifiedDrug: null
+    }
+  ]);
+  
+  // Function to create a new empty drug object
+  const createEmptyDrug = (id) => ({
+    id,
     isLoading: false,
     error: "",
     dbData: {},
     aiData: {},
-    extractedText: "", // Store extracted text
-    identifiedDrug: null // Store identified drug
-  });
-  
-  const [drug2, setDrug2] = useState({
-    isLoading: false,
-    error: "",
-    dbData: {},
-    aiData: {},
-    extractedText: "", // Store extracted text
-    identifiedDrug: null // Store identified drug
+    extractedText: "",
+    identifiedDrug: null
   });
   
   // Authentication function for ImageKit
@@ -51,7 +72,7 @@ const DrugInteractionPage = () => {
   };
 
   // Process the uploaded image through the backend API
-  const processImage = async (imageUrl, isDrug1) => {
+  const processImage = async (imageUrl, drugId) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/process-drug-image`, {
         method: 'POST',
@@ -68,123 +89,141 @@ const DrugInteractionPage = () => {
 
       const data = await response.json();
       
-      if (isDrug1) {
-        setDrug1(prev => ({
-          ...prev,
-          extractedText: data.extractedText,
-          identifiedDrug: data.identifiedDrug,
-          isLoading: false,
-        }));
-      } else {
-        setDrug2(prev => ({
-          ...prev,
-          extractedText: data.extractedText,
-          identifiedDrug: data.identifiedDrug,
-          isLoading: false,
-        }));
-      }
+      // Update the specific drug in the array
+      setDrugs(prevDrugs => 
+        prevDrugs.map(drug => 
+          drug.id === drugId 
+            ? {
+                ...drug,
+                extractedText: data.extractedText,
+                identifiedDrug: data.identifiedDrug,
+                isLoading: false,
+                error: ""
+              }
+            : drug
+        )
+      );
 
       return data;
     } catch (error) {
       console.error('Error processing image:', error);
       const errorMessage = 'Failed to identify drug from image';
       
-      if (isDrug1) {
-        setDrug1(prev => ({ ...prev, isLoading: false, error: errorMessage }));
-      } else {
-        setDrug2(prev => ({ ...prev, isLoading: false, error: errorMessage }));
-      }
+      // Update the specific drug with error
+      setDrugs(prevDrugs => 
+        prevDrugs.map(drug => 
+          drug.id === drugId 
+            ? { ...drug, isLoading: false, error: errorMessage }
+            : drug
+        )
+      );
       
       throw error;
     }
   };
   
-  // Handle upload events for Drug 1
-  const onDrug1Error = err => {
-    console.log("Error uploading Drug 1:", err);
-    setDrug1(prev => ({...prev, isLoading: false, error: "Upload failed"}));
-  };
-  
-  const onDrug1Success = res => {
-    console.log("Drug 1 upload success:", res);
-    setDrug1(prev => ({...prev, dbData: res}));
+  // Generic upload handlers that work with any drug
+  const createUploadHandlers = (drugId) => ({
+    onError: (err) => {
+      console.log(`Error uploading Drug ${drugId}:`, err);
+      setDrugs(prevDrugs => 
+        prevDrugs.map(drug => 
+          drug.id === drugId 
+            ? { ...drug, isLoading: false, error: "Upload failed" }
+            : drug
+        )
+      );
+    },
     
-    // Process the uploaded image to extract text and identify the drug
-    if (res.url) {
-      processImage(res.url, true).catch(error => {
-        console.error("Failed to process drug 1 image:", error);
-      });
+    onSuccess: (res) => {
+      console.log(`Drug ${drugId} upload success:`, res);
+      setDrugs(prevDrugs => 
+        prevDrugs.map(drug => 
+          drug.id === drugId 
+            ? { ...drug, dbData: res }
+            : drug
+        )
+      );
+      
+      // Process the uploaded image
+      if (res.url) {
+        processImage(res.url, drugId).catch(error => {
+          console.error(`Failed to process drug ${drugId} image:`, error);
+        });
+      }
+    },
+    
+    onUploadStart: (evt) => {
+      const file = evt.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setDrugs(prevDrugs => 
+          prevDrugs.map(drug => 
+            drug.id === drugId 
+              ? {
+                  ...drug,
+                  isLoading: true,
+                  error: "",
+                  extractedText: "",
+                  identifiedDrug: null,
+                  aiData: {
+                    inlineData: {
+                      data: reader.result.split(",")[1],
+                      mimeType: file.type,
+                    },
+                  }
+                }
+              : drug
+          )
+        );
+      };
+      reader.readAsDataURL(file);
     }
+  });
+  
+  // Add a new drug slot
+  const addDrug = () => {
+    const newId = Math.max(...drugs.map(d => d.id)) + 1;
+    setDrugs(prevDrugs => [...prevDrugs, createEmptyDrug(newId)]);
   };
   
-  const onDrug1UploadStart = evt => {
-    const file = evt.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setDrug1(prev => ({
-        ...prev, 
-        isLoading: true,
-        error: "",
-        extractedText: "",
-        identifiedDrug: null,
-        aiData: {
-          inlineData: {
-            data: reader.result.split(",")[1],
-            mimeType: file.type,
-          },
-        }
-      }));
-    };
-    reader.readAsDataURL(file);
-  };
-  
-  // Handle upload events for Drug 2
-  const onDrug2Error = err => {
-    console.log("Error uploading Drug 2:", err);
-    setDrug2(prev => ({...prev, isLoading: false, error: "Upload failed"}));
-  };
-  
-  const onDrug2Success = res => {
-    console.log("Drug 2 upload success:", res);
-    setDrug2(prev => ({...prev, dbData: res}));
-    
-    // Process the uploaded image to extract text and identify the drug
-    if (res.url) {
-      processImage(res.url, false).catch(error => {
-        console.error("Failed to process drug 2 image:", error);
-      });
+  // Remove a drug slot (minimum of 2 drugs required)
+  const removeDrug = (drugId) => {
+    if (drugs.length <= 2) {
+      alert("You need at least 2 drugs to check for interactions");
+      return;
     }
+    setDrugs(prevDrugs => prevDrugs.filter(drug => drug.id !== drugId));
+    cleanupRef(drugId);
   };
   
-  const onDrug2UploadStart = evt => {
-    const file = evt.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setDrug2(prev => ({
-        ...prev, 
-        isLoading: true,
-        error: "",
-        extractedText: "",
-        identifiedDrug: null,
-        aiData: {
-          inlineData: {
-            data: reader.result.split(",")[1],
-            mimeType: file.type,
-          },
-        }
-      }));
-    };
-    reader.readAsDataURL(file);
+  // Clear a specific drug
+  const clearDrug = (drugId) => {
+    setDrugs(prevDrugs => 
+      prevDrugs.map(drug => 
+        drug.id === drugId 
+          ? createEmptyDrug(drugId)
+          : drug
+      )
+    );
+  };
+  
+  // Clean up refs when drugs are removed
+  const cleanupRef = (drugId) => {
+    if (uploadRefs.current[drugId]) {
+      delete uploadRefs.current[drugId];
+    }
   };
   
   // Mutation to create a new chat with the drug interaction check
   const createChatMutation = useMutation({
     mutationFn: () => {
       setIsSubmitting(true);
+      
+      // Prepare drug data for all uploaded drugs
+      const uploadedDrugs = drugs.filter(drug => drug.dbData?.filePath || drug.identifiedDrug);
       
       return fetch(`${import.meta.env.VITE_API_URL}/api/chats`, {
         method: "POST",
@@ -193,16 +232,24 @@ const DrugInteractionPage = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          useGemini: true, // Flag to use GeminiService
-          chatType: "drugInteraction", // Specify chat type for GeminiService
+          useGemini: true,
+          chatType: "drugInteraction",
           drugCheck: {
-            drug1Image: drug1?.dbData?.filePath,
-            drug2Image: drug2?.dbData?.filePath,
-            drug1Info: drug1?.identifiedDrug,
-            drug2Info: drug2?.identifiedDrug
+            drugs: uploadedDrugs.map(drug => ({
+              name: drug.identifiedDrug?.name || "Unknown Drug",
+              ingredients: drug.identifiedDrug?.ingredients || [],
+              image: drug.dbData?.filePath || null,
+              extractedText: drug.extractedText || ""
+            })),
+            drugCount: uploadedDrugs.length
           }
         }),
-      }).then((res) => res.json());
+      }).then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      });
     },
     onSuccess: (id) => {
       // Prevent duplicate initial response
@@ -224,9 +271,11 @@ const DrugInteractionPage = () => {
   });
   
   const handleCheck = () => {
-    // Validate that at least one drug image is uploaded
-    if (!drug1.dbData?.filePath && !drug2.dbData?.filePath) {
-      alert("Please upload at least one drug image");
+    // Count uploaded drugs
+    const uploadedDrugs = drugs.filter(drug => drug.dbData?.filePath || drug.identifiedDrug);
+    
+    if (uploadedDrugs.length < 2) {
+      alert("Please upload at least 2 drug images to check for interactions");
       return;
     }
     
@@ -236,24 +285,14 @@ const DrugInteractionPage = () => {
   
   // Function to clear all drug images and data
   const handleClearAll = () => {
-    setDrug1({
-      isLoading: false,
-      error: "",
-      dbData: {},
-      aiData: {},
-      extractedText: "",
-      identifiedDrug: null
-    });
-    
-    setDrug2({
-      isLoading: false,
-      error: "",
-      dbData: {},
-      aiData: {},
-      extractedText: "",
-      identifiedDrug: null
-    });
+    setDrugs(prevDrugs => 
+      prevDrugs.map(drug => createEmptyDrug(drug.id))
+    );
   };
+  
+  // Check if any drugs are uploaded
+  const hasUploadedDrugs = drugs.some(drug => drug.dbData?.filePath || drug.identifiedDrug);
+  const uploadedCount = drugs.filter(drug => drug.dbData?.filePath || drug.identifiedDrug).length;
   
   return (
     <div className="page-container">
@@ -261,166 +300,123 @@ const DrugInteractionPage = () => {
         <div className="page-header">
           <h1 className="page-title drug-interaction-title">Drug Interaction Checker</h1>
           <p className="page-description">
-            Scan your drugs so we can check the drugs and check for
-            any potential interactions to keep you safe.
+            Scan your drugs so we can check for any potential interactions to keep you safe.
+            You can add multiple drugs for comprehensive interaction checking.
           </p>
+          <div className="drug-counter">
+            <span>Drugs uploaded: {uploadedCount}</span>
+          </div>
         </div>
         
-        <div className="drug-inputs">
-          <div className="drug-input">
-            <h2>Drug 1</h2>
-            <div className="upload-wrapper">
-              {drug1.isLoading && <div className="loading-indicator">Processing image...</div>}
-              
-              <IKContext
-                urlEndpoint={urlEndpoint}
-                publicKey={publicKey}
-                authenticator={authenticator}
-              >
-                <IKUpload
-                  fileName="drug1-upload.png"
-                  onError={onDrug1Error}
-                  onSuccess={onDrug1Success}
-                  useUniqueFileName={true}
-                  onUploadStart={onDrug1UploadStart}
-                  style={{display:"none"}}
-                  ref={drug1UploadRef}
-                />
-              </IKContext>
-              
-              {drug1.dbData?.filePath ? (
-                <div className="drug-preview">
-                  <div className="image-container">
-                    <IKImage
-                      urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
-                      path={drug1.dbData.filePath}
-                      transformation={[{ width: 300, height: 200, cropMode: 'maintain_ratio' }]}
-                      className="drug-image"
-                    />
-                  </div>
-                  {drug1.identifiedDrug && (
-                    <div className="drug-info">
-                      <p><strong>Identified Drug:</strong> {drug1.identifiedDrug.name}</p>
-                      <p><strong>Ingredients:</strong> {drug1.identifiedDrug.ingredients.join(", ")}</p>
-                    </div>
+        <div className="drug-inputs-grid">
+          {drugs.map((drug, index) => {
+            const handlers = createUploadHandlers(drug.id);
+            const uploadRef = getUploadRef(drug.id);
+            
+            return (
+              <div key={drug.id} className="drug-input">
+                <div className="drug-header">
+                  <h2>Drug {index + 1}</h2>
+                  {drugs.length > 2 && (
+                    <button 
+                      className="remove-drug-button"
+                      onClick={() => removeDrug(drug.id)}
+                      disabled={isSubmitting}
+                      title="Remove this drug"
+                    >
+                      ×
+                    </button>
                   )}
-                  {drug1.extractedText && !drug1.identifiedDrug && (
-                    <div className="drug-info">
-                      <p><strong>Extracted Text:</strong> {drug1.extractedText}</p>
-                      <p><strong>No matching drug found in database</strong></p>
-                    </div>
-                  )}
-                  {drug1.error && <p className="error-message">{drug1.error}</p>}
-                  <button 
-                    className="remove-image" 
-                    onClick={() => setDrug1({
-                      isLoading: false,
-                      error: "",
-                      dbData: {},
-                      aiData: {},
-                      extractedText: "",
-                      identifiedDrug: null
-                    })}
+                </div>
+                
+                <div className="upload-wrapper">
+                  {drug.isLoading && <div className="loading-indicator">Processing image...</div>}
+                  
+                  <IKContext
+                    urlEndpoint={urlEndpoint}
+                    publicKey={publicKey}
+                    authenticator={authenticator}
                   >
-                    Remove
-                  </button>
+                    <IKUpload
+                      fileName={`drug${drug.id}-upload.png`}
+                      onError={handlers.onError}
+                      onSuccess={handlers.onSuccess}
+                      useUniqueFileName={true}
+                      onUploadStart={handlers.onUploadStart}
+                      style={{display:"none"}}
+                      ref={uploadRef}
+                    />
+                  </IKContext>
+                  
+                  {drug.dbData?.filePath ? (
+                    <div className="drug-preview">
+                      <div className="image-container">
+                        <IKImage
+                          urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
+                          path={drug.dbData.filePath}
+                          transformation={[{ width: 300, height: 200, cropMode: 'maintain_ratio' }]}
+                          className="drug-image"
+                        />
+                      </div>
+                      {drug.identifiedDrug && (
+                        <div className="drug-info">
+                          <p><strong>Identified Drug:</strong> {drug.identifiedDrug.name}</p>
+                          <p><strong>Ingredients:</strong> {drug.identifiedDrug.ingredients.join(", ")}</p>
+                        </div>
+                      )}
+                      {drug.extractedText && !drug.identifiedDrug && (
+                        <div className="drug-info">
+                          <p><strong>Extracted Text:</strong> {drug.extractedText}</p>
+                          <p><strong>No matching drug found in database</strong></p>
+                        </div>
+                      )}
+                      {drug.error && <p className="error-message">{drug.error}</p>}
+                      <button 
+                        className="remove-image" 
+                        onClick={() => clearDrug(drug.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div 
+                      className="upload-container"
+                      onClick={() => uploadRef.current?.click()}
+                    >
+                      <div className="upload-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M21 14V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V14" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M7 10L12 15L17 10" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M12 15V3" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <div className="upload-placeholder">
+                        <span className="upload-label">Click to upload Drug {index + 1}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div 
-                  className="upload-container"
-                  onClick={() => drug1UploadRef.current.click()}
-                >
-                  <div className="upload-icon">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M21 14V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V14" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M7 10L12 15L17 10" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M12 15V3" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <div className="upload-placeholder">
-                    <span className="upload-label">Click to upload a photo of Drug 1</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
+            );
+          })}
           
-          <div className="drug-input">
-            <h2>Drug 2</h2>
-            <div className="upload-wrapper">
-              {drug2.isLoading && <div className="loading-indicator">Processing image...</div>}
-              
-              <IKContext
-                urlEndpoint={urlEndpoint}
-                publicKey={publicKey}
-                authenticator={authenticator}
-              >
-                <IKUpload
-                  fileName="drug2-upload.png"
-                  onError={onDrug2Error}
-                  onSuccess={onDrug2Success}
-                  useUniqueFileName={true}
-                  onUploadStart={onDrug2UploadStart}
-                  style={{display:"none"}}
-                  ref={drug2UploadRef}
-                />
-              </IKContext>
-              
-              {drug2.dbData?.filePath ? (
-                <div className="drug-preview">
-                  <div className="image-container">
-                    <IKImage
-                      urlEndpoint={import.meta.env.VITE_IMAGE_KIT_ENDPOINT}
-                      path={drug2.dbData.filePath}
-                      transformation={[{ width: 300, height: 200, cropMode: 'maintain_ratio' }]}
-                      className="drug-image"
-                    />
-                  </div>
-                  {drug2.identifiedDrug && (
-                    <div className="drug-info">
-                      <p><strong>Identified Drug:</strong> {drug2.identifiedDrug.name}</p>
-                      <p><strong>Ingredients:</strong> {drug2.identifiedDrug.ingredients.join(", ")}</p>
-                    </div>
-                  )}
-                  {drug2.extractedText && !drug2.identifiedDrug && (
-                    <div className="drug-info">
-                      <p><strong>Extracted Text:</strong> {drug2.extractedText}</p>
-                      <p><strong>No matching drug found in database</strong></p>
-                    </div>
-                  )}
-                  {drug2.error && <p className="error-message">{drug2.error}</p>}
-                  <button 
-                    className="remove-image" 
-                    onClick={() => setDrug2({
-                      isLoading: false,
-                      error: "",
-                      dbData: {},
-                      aiData: {},
-                      extractedText: "",
-                      identifiedDrug: null
-                    })}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : (
-                <div 
-                  className="upload-container"
-                  onClick={() => drug2UploadRef.current.click()}
-                >
-                  <div className="upload-icon">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M21 14V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V14" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M7 10L12 15L17 10" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M12 15V3" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                  <div className="upload-placeholder">
-                    <span className="upload-label">Click to upload a photo of Drug 2</span>
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* Add Drug Button */}
+          <div className="add-drug-container">
+            <button 
+              className="add-drug-button"
+              onClick={addDrug}
+              disabled={isSubmitting || drugs.length >= 10} // Limit to 10 drugs max
+              title="Add another drug"
+            >
+              <div className="add-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V19" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M5 12H19" stroke="#3A8D8D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span>Add Drug</span>
+              {drugs.length >= 10 && <small>(Maximum 10 drugs)</small>}
+            </button>
           </div>
         </div>
         
@@ -428,15 +424,15 @@ const DrugInteractionPage = () => {
           <button 
             className="primary-button check-button" 
             onClick={handleCheck}
-            disabled={isSubmitting || (!drug1.dbData?.filePath && !drug2.dbData?.filePath)}
+            disabled={isSubmitting || uploadedCount < 2}
           >
-            {isSubmitting ? "Checking..." : "Check Interactions"}
+            {isSubmitting ? "Checking..." : `Check Interactions (${uploadedCount} drugs)`}
           </button>
           
           <button 
             className="secondary-button clear-button"
             onClick={handleClearAll}
-            disabled={isSubmitting || (!drug1.dbData?.filePath && !drug2.dbData?.filePath)}
+            disabled={isSubmitting || !hasUploadedDrugs}
           >
             Clear All
           </button>

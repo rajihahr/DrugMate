@@ -140,22 +140,57 @@ const ChatPage = () => {
     generateResponseMutation.mutate(text);
   };
   
-  // Handle initial message when opening a new chat
+  // Handle initial message when opening a new chat - FIXED VERSION
   const hasRun = useRef(false);
   
   useEffect(() => {
     // Only run this effect once when data is available
     if (data && !hasRun.current) {
-      // Check if there's only the initial message
-      if (data.history.length === 1) {
-        // Generate response for the initial message
+      // Check if there's only the initial message AND it's from the user
+      // This means we need to generate an AI response for it
+      if (data.history.length === 1 && data.history[0].role === "user") {
+        // Don't re-send the message, just generate a response to it
+        // The backend will handle generating the AI response to the existing user message
         const initialMessage = data.history[0].parts[0].text;
-        generateResponseMutation.mutate(initialMessage);
+        
+        // Set loading state for initial response
+        setIsGenerating(true);
+        setError("");
+        
+        // Generate AI response without adding the user message again
+        fetch(`${import.meta.env.VITE_API_URL}/api/generate`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chatId: chatId,
+            message: initialMessage,
+            useGemini: true,
+            chatType: data.chatType || "general",
+            isInitialResponse: true // Flag to indicate this is the initial AI response
+          }),
+        })
+        .then(res => res.json())
+        .then(() => {
+          // Refresh the chat data
+          queryClient.invalidateQueries({ queryKey: ["chat", chatId] });
+          // Set generating to false after data is refreshed
+          setTimeout(() => {
+            setIsGenerating(false);
+          }, 100);
+        })
+        .catch(err => {
+          console.error("Error generating initial response:", err);
+          setError("Failed to generate initial response");
+          setIsGenerating(false);
+        });
       }
       // Mark as run regardless
       hasRun.current = true;
     }
-  }, [data]); // Only depend on data changes, not isGenerating
+  }, [data, chatId, queryClient]);
   
   // Function to detect if a message contains emergency-related information
   const containsEmergencyInfo = (message) => {
@@ -191,7 +226,7 @@ const ChatPage = () => {
       const lastMessage = data.history[data.history.length - 1];
       
       // Only check assistant messages
-      if (lastMessage.role === 'assistant') {
+      if (lastMessage.role === 'model') {
         // Check for drug interaction content
         if (containsDrugInteractionInfo(lastMessage)) {
           setShowDrugInteractionSuggestion(true);

@@ -5,41 +5,105 @@
   color: #3A8D8D;
 }
 
-.drug-inputs {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
+/* Drug counter */
+.drug-counter {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background-color: #e6fffa;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 14px;
+  color: #3A8D8D;
+  font-weight: 600;
+}
+
+/* Grid layout for multiple drugs */
+.drug-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
   margin: 40px 0;
+  max-width: 100%;
 }
 
 @media (min-width: 768px) {
-  .drug-inputs {
-    flex-direction: row;
-    gap: 40px;
+  .drug-inputs-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .drug-inputs-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 35px;
   }
 }
 
 .drug-input {
-  flex: 1;
   display: flex;
   flex-direction: column;
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   padding: 25px;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
 }
 
-.drug-input h2 {
-  font-size: 22px;
-  color: #3A8D8D;
+.drug-input:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border-color: #e6fffa;
+}
+
+/* Drug header with remove button */
+.drug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
   padding-bottom: 10px;
   border-bottom: 1px solid #edf2f7;
 }
 
+.drug-header h2 {
+  font-size: 22px;
+  color: #3A8D8D;
+  margin: 0;
+}
+
+.remove-drug-button {
+  background-color: #fed7d7;
+  color: #e53e3e;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.remove-drug-button:hover {
+  background-color: #e53e3e;
+  color: white;
+  transform: scale(1.1);
+}
+
+.remove-drug-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Upload wrapper */
 .upload-wrapper {
   position: relative;
-  height: 250px; /* Fixed height for both upload and preview */
+  height: 250px;
   flex-grow: 1;
 }
 
@@ -89,6 +153,7 @@
   padding: 0px;
 }
 
+/* Drug preview */
 .drug-preview {
   height: 100%;
   background-color: #f7fafc;
@@ -102,7 +167,7 @@
 
 .image-container {
   width: 100%;
-  height: calc(100% - 80px); /* Leave room for drug info and remove button */
+  height: calc(100% - 80px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -146,6 +211,59 @@
   background-color: #c53030;
 }
 
+/* Add drug button */
+.add-drug-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 250px;
+}
+
+.add-drug-button {
+  background-color: #f7fafc;
+  border: 2px dashed #3A8D8D;
+  border-radius: 12px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #3A8D8D;
+  font-size: 16px;
+  font-weight: 600;
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
+}
+
+.add-drug-button:hover:not(:disabled) {
+  background-color: #f0f7f7;
+  border-color: #2d7a7a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(58, 141, 141, 0.15);
+}
+
+.add-drug-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.add-icon {
+  margin-bottom: 15px;
+  color: #3A8D8D;
+}
+
+.add-drug-button small {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #718096;
+  font-weight: normal;
+}
+
+/* Loading indicator */
 .loading-indicator {
   position: absolute;
   top: 0;
@@ -172,7 +290,7 @@
 }
 
 /* Action buttons */
-.drug-interaction-actions {
+.action-buttons {
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -181,7 +299,7 @@
 }
 
 @media (min-width: 768px) {
-  .drug-interaction-actions {
+  .action-buttons {
     flex-direction: row;
     justify-content: center;
     gap: 20px;
@@ -189,7 +307,10 @@
 }
 
 .check-button {
-  min-width: 200px;
+  min-width: 250px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .clear-button {
@@ -198,4 +319,87 @@
 
 .back-button {
   min-width: 200px;
+}
+
+.back-button-container {
+  margin-top: 30px;
+  text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+  .drug-inputs-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .drug-input {
+    padding: 20px;
+  }
+  
+  .upload-wrapper {
+    height: 220px;
+  }
+  
+  .add-drug-container {
+    min-height: 220px;
+  }
+  
+  .add-drug-button {
+    min-height: 220px;
+    padding: 30px 15px;
+  }
+}
+
+/* Animation for new drug additions */
+.drug-input {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced interaction feedback */
+.drug-input:has(.drug-preview) {
+  border-color: #68d391;
+  background: linear-gradient(145deg, #ffffff, #f7fafc);
+}
+
+/* Status indicators */
+.drug-input::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  z-index: 5;
+}
+
+.drug-input:has(.drug-preview)::before {
+  background-color: #68d391;
+}
+
+.drug-input:has(.loading-indicator)::before {
+  background-color: #ed8936;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }

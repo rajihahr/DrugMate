@@ -4807,8 +4807,7 @@
   },
   {
     "name": "Ferr Phos, Mag Phos, Kali Sulf, Nat Sulf",
-    "ingredients": [
-      "FERRIC PYROPHOSPHATE",
+    "ingredients": [      "FERRIC PYROPHOSPHATE",
       "MAGNESIUM PHOSPHATE, DIBASIC TRIHYDRATE",
       "POTASSIUM SULFATE",
       "SODIUM SULFATE"

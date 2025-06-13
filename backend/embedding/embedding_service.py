@@ -20,7 +20,7 @@ app.add_middleware(
 )
 
 # Load the SentenceTransformer model
-model = SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer('all-MiniLM-L12-v2')
 
 # Create cache for embeddings
 drug_embeddings = {}
